@@ -202,7 +202,7 @@ export default function Puzzle() {
                         Số bước: {step}
                     </div>
 
-                    <div className={`grid grid-cols-${size} gap-2 text-white w-[200px] h-[200px]  md:w-[300px] md:h-[300px] relative`}>
+                    <div style={{gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))`}} className={`grid gap-2 text-white w-[200px] h-[200px]  md:w-[300px] md:h-[300px] relative`}>
                         {/* Cover xáo sau x giây */}
                         {isLoadingGame && (
                             <div className="absolute top-0 left-0 right-0 bottom-0 bg-slate-500 opacity-70 flex items-center justify-center">
