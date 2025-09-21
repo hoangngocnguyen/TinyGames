@@ -18,18 +18,20 @@ const createBoard = (size) => {
 export default function Puzzle() {
     const [size, setSize] = useState(3)
     const [board, setBoard] = useState(() => createBoard(size));
-
     const [isWin, SetIsWin] = useState(false);
-
     const [isLoadingGame, setLoadingGame] = useState(true)
-
-
-
     const [step, setStep] = useState(0)
     const [records, setRecords] = useState([{ size: 2, step: 0 }, { size: 3, step: 0 }, { size: 4, step: 0 }])
 
 
     //////////// 1. Các hàm phụ trợ ////////////
+    // Reset trạng thái game
+    const resetGame = () => {
+        setLoadingGame(true)
+        SetIsWin(false)
+        setStep(0)
+    }
+
     // Hoán vị 2 ô
     const swap = (board, i0, j0, i, j) => {
         board[i0][j0] = board[i][j];
@@ -64,7 +66,6 @@ export default function Puzzle() {
         // console.log("count", count, "size", size);
 
         // Xét riêng loại 3x3, 5x5 -  4x4, 6x6...
-
         // Nếu size lẻ, chỉ cần count chẵn
         if (size % 2 === 1) {
             return count % 2 === 0
@@ -185,14 +186,14 @@ export default function Puzzle() {
         }, 2000)
     }, [size, handleShuffle])
 
+    
 
     // Xử lý khi chọn size
     const handleClickSize = (size) => {
-        // setSize, setBoard, loading, isWin
+        // setSize, setBoard, loading, isWin, step
         setSize(size)
         setBoard(() => createBoard(size))
-        setLoadingGame(true)
-        SetIsWin(false)
+        resetGame()
     }
     
     return (
