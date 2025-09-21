@@ -18,7 +18,6 @@ const createBoard = (size) => {
 export default function Puzzle() {
     const [size, setSize] = useState(3)
     const [board, setBoard] = useState(() => createBoard(size));
-    const initialBoard = createBoard(size)
 
     const [isWin, SetIsWin] = useState(false);
 
@@ -27,7 +26,7 @@ export default function Puzzle() {
 
 
     const [step, setStep] = useState(0)
-    const [record, setRecord] = useState(0)
+    const [records, setRecords] = useState([{ size: 2, step: 0 }, { size: 3, step: 0 }, { size: 4, step: 0 }])
 
 
     //////////// 1. Các hàm phụ trợ ////////////
@@ -41,7 +40,7 @@ export default function Puzzle() {
         for (let r = 0; r < board.length; r++) {
             for (let c = 0; c < board[r].length; c++) {
                 if (board[r][c] === 0) {
-                    return {row: r, col: c}
+                    return { row: r, col: c }
                 }
             }
         }
@@ -63,7 +62,7 @@ export default function Puzzle() {
         }
 
         // console.log("count", count, "size", size);
-        
+
         // Xét riêng loại 3x3, 5x5 -  4x4, 6x6...
 
         // Nếu size lẻ, chỉ cần count chẵn
@@ -73,23 +72,23 @@ export default function Puzzle() {
             // Nếu size chẵn, xét trường hợp hàng của ô trống (tính từ 1 xuống)
             const emptyRow = findEmty(board).row + 1;
             // console.log("emptyRow", emptyRow);
-            
+
             return (count % 2 === 0 && emptyRow % 2 === 0) || (count % 2 === 1 && emptyRow % 2 === 1);
-            
+
         }
     }
 
     // Kiểm tra chiến thắng
     const checkWin = (board) => {
+        const initialBoard = createBoard(board.length)        
         const target = initialBoard.flat()
         return board.flat().join() === target.join();
     };
 
-    
+
 
 
     //////////// 2. Các hàm chức năng ////////////
-
 
     // Hoán đổi, cách thức là hoán vị trí => chọn ra vị trí ngẫu nhiên và hoán giá trị giữa 2 vị trí -> chưa gọi là xáo trộn
     const handleShuffle = useCallback(() => {
@@ -124,11 +123,23 @@ export default function Puzzle() {
     // Cập nhật kỷ lục
     useEffect(() => {
         if (isWin) {
-            setRecord(prevRecord => {
-                return step < prevRecord || prevRecord === 0 ? step : prevRecord
-            });
+            setRecords(prevRecords => {
+                const recordForSize = prevRecords.find(r => r.size === size);
+                // console.log("reforsize", recordForSize);
+                
+                // Tính thêm trường hợp tạo kỷ lục ban đầu
+                if (step < recordForSize.step || recordForSize.step === 0) {
+                    // Lọc ra rồi thêm vào lại
+                    const temp = prevRecords.filter(record => record.size !== size)
+                    // console.log("temp", temp, recordForSize);
+                    
+                    return [...temp, { size: size, step: step }]
+                } else {
+                    return prevRecords
+                }
+            })
         }
-    }, [isWin, step]); // thêm step vào dependency để effect chạy đúng
+    }, [isWin, step, size]); // thêm step vào dependency để effect chạy đúng
 
 
     // Xử lý khi click vào 1 ô
@@ -166,10 +177,8 @@ export default function Puzzle() {
 
     };
 
-    // Xử lý khi thay đổi size: cập nhật board, xáo lại (lần đầu + các lần change)
+    // Xử lý khi thay đổi size: cập nhật board, xáo lại (useEffect: lần đầu + các lần change)
     useEffect(() => {
-        setBoard(() => createBoard(size))
-        setLoadingGame(true)
         setTimeout(() => {
             handleShuffle()
             setLoadingGame(false)
@@ -177,8 +186,17 @@ export default function Puzzle() {
     }, [size, handleShuffle])
 
 
+    // Xử lý khi chọn size
+    const handleClickSize = (size) => {
+        // setSize, setBoard, loading, isWin
+        setSize(size)
+        setBoard(() => createBoard(size))
+        setLoadingGame(true)
+        SetIsWin(false)
+    }
+    
     return (
-        <div className="mx-auto bg-white p-6 rounded-lg shadow-lg max-w-[700px] flex flex-col">
+        <div className="container mx-auto bg-white p-6 rounded-lg shadow-lg flex flex-col">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
                 {/* Trò chơi */}
                 <div className="flex flex-col items-center">
@@ -186,9 +204,9 @@ export default function Puzzle() {
 
                     <div className="text-gray-500 text-[14px]">Chọn màn chơi</div>
                     <div className="flex mt-1 justify-center w-full gap-2 text-[16px] text-white font-medium ">
-                        <div className="bg-blue-500 py-1 px-5 rounded cursor-pointer" onClick={() => setSize(2)}>2x2</div>
-                        <div className="bg-blue-500 py-1 px-5 rounded cursor-pointer" onClick={() => setSize(3)}>3x3</div>
-                        <div className="bg-blue-500 py-1 px-5 rounded cursor-pointer" onClick={() => setSize(4)}>4x4</div>
+                        <div className={`${size === 2? "bg-blue-500" : "bg-gray-400"} py-1 px-5 rounded cursor-pointer`} onClick={() => handleClickSize(2)}>2x2</div>
+                        <div className={`${size === 3? "bg-blue-500" : "bg-gray-400"} py-1 px-5 rounded cursor-pointer`} onClick={() => handleClickSize(3)}>3x3</div>
+                        <div className={`${size === 4? "bg-blue-500" : "bg-gray-400"} py-1 px-5 rounded cursor-pointer`} onClick={() => handleClickSize(4)}>4x4</div>
                     </div>
                     <div className="h-[60px] flex items-center justify-center">
                         {isWin && (
@@ -202,7 +220,7 @@ export default function Puzzle() {
                         Số bước: {step}
                     </div>
 
-                    <div style={{gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))`}} className={`grid gap-2 text-white w-[200px] h-[200px]  md:w-[300px] md:h-[300px] relative`}>
+                    <div style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }} className={`grid gap-2 text-white w-[300px] h-[300px]  md:w-[400px] md:h-[400px] relative`}>
                         {/* Cover xáo sau x giây */}
                         {isLoadingGame && (
                             <div className="absolute top-0 left-0 right-0 bottom-0 bg-slate-500 opacity-70 flex items-center justify-center">
@@ -244,12 +262,27 @@ export default function Puzzle() {
                 </div>
 
                 {/* Kỷ lục */}
-                <div className="flex flex-col items-center justify-center bg-gray-100 p-6 rounded-lg shadow-md md:mt-0 mt-6">
-                    <h2 className="text-2xl font-bold mb-4 text-yellow-700">
-                        Kỷ lục bước nhảy
+                <div className="flex flex-col items-center justify-center bg-white p-6 rounded-2xl shadow-lg md:mt-0 mt-6 w-full max-w-md">
+                    <h2 className="text-2xl font-bold mb-6 text-yellow-700 tracking-wide">
+                        🏆 Kỷ lục trò chơi
                     </h2>
-                    <div className="text-[32px] text-green-600 font-extrabold">{record}</div>
+                    <div className="space-y-3 w-full">
+                        {records.sort((r1, r2) => r1.size - r2.size).map((record, i) => (
+                            <div
+                                key={i}
+                                className="flex items-center justify-between bg-gray-50 px-4 py-2 rounded-lg border border-gray-200"
+                            >
+                                <span className="text-lg font-semibold text-gray-700">
+                                    {record.size} × {record.size}
+                                </span>
+                                <span className="text-2xl font-extrabold text-green-600">
+                                    {record.step}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
+
             </div>
 
             {/* Footer copyright */}
