@@ -48,7 +48,7 @@ export default function Puzzle() {
 
 
     //////////// 2. Các hàm chức năng ////////////
-    
+
 
     // Hoán đổi, cách thức là hoán vị trí => chọn ra vị trí ngẫu nhiên và hoán giá trị giữa 2 vị trí -> chưa gọi là xáo trộn
     const handleShuffle = useCallback(() => {
@@ -145,24 +145,32 @@ export default function Puzzle() {
 
 
     return (
-        <div className="mx-auto bg-white p-6 rounded-lg shadow-lg max-w-[700px]">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 ">
+        <div className="mx-auto bg-white p-6 rounded-lg shadow-lg max-w-[700px] flex flex-col">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
                 {/* Trò chơi */}
                 <div className="flex flex-col items-center">
                     <h1 className="text-3xl font-bold mb-3 text-blue-700">8-Puzzle</h1>
                     <div className="h-[60px] flex items-center justify-center">
                         {isWin && (
-                            <div className="text-black text-[24px] font-semibold">🎉 Bạn đã chiến thắng! 🎉</div>
+                            <div className="text-black text-[24px] font-semibold">
+                                🎉 Bạn đã chiến thắng! 🎉
+                            </div>
                         )}
                     </div>
 
-                    <div className="text-[20px] text-green-600 font-medium py-2">Số bước: {step}</div>
+                    <div className="text-[20px] text-green-600 font-medium py-2">
+                        Số bước: {step}
+                    </div>
 
                     <div className="grid grid-cols-3 gap-2 text-white w-[300px] h-[300px] relative">
-                        {/* cover xáo sau x giây*/}
-                        {isLoadingGame && <div className="absolute top-0 left-0 right-0 bottom-0 bg-slate-500 opacity-70  flex items-center justify-center">
-                            <div className="text-white text-[24px] font-semibold ">Xáo trộn...</div>
-                            </div>}
+                        {/* Cover xáo sau x giây */}
+                        {isLoadingGame && (
+                            <div className="absolute top-0 left-0 right-0 bottom-0 bg-slate-500 opacity-70 flex items-center justify-center">
+                                <div className="text-white text-[24px] font-semibold">
+                                    Xáo trộn...
+                                </div>
+                            </div>
+                        )}
                         {board.map((row, i) =>
                             row.map((item, j) => {
                                 if (item === 0) {
@@ -175,7 +183,8 @@ export default function Puzzle() {
                                 }
                                 return (
                                     <div
-                                        className={`bg-blue-600 rounded flex items-center justify-center text-[24px] cursor-pointer ${isWin ? "bg-green-600" : ""}`}
+                                        className={`bg-blue-600 rounded flex items-center justify-center text-[24px] cursor-pointer ${isWin ? "bg-green-600" : ""
+                                            }`}
                                         key={`${i}${j}`}
                                         onClick={() => handleClick(i, j)}
                                     >
@@ -196,11 +205,19 @@ export default function Puzzle() {
 
                 {/* Kỷ lục */}
                 <div className="flex flex-col items-center justify-center bg-gray-100 p-6 rounded-lg shadow-md md:mt-0 mt-6">
-                    <h2 className="text-2xl font-bold mb-4 text-yellow-700">Kỷ lục bước nhảy</h2>
+                    <h2 className="text-2xl font-bold mb-4 text-yellow-700">
+                        Kỷ lục bước nhảy
+                    </h2>
                     <div className="text-[32px] text-green-600 font-extrabold">{record}</div>
                 </div>
             </div>
+
+            {/* Footer copyright */}
+            <footer className="mt-10 text-center text-sm text-gray-500">
+                &copy; 2025 Hoang Ngoc Nguyen. All rights reserved.
+            </footer>
         </div>
+
 
     );
 }
