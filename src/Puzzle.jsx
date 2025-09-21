@@ -146,7 +146,7 @@ export default function Puzzle() {
 
     return (
         <div className="mx-auto bg-white p-6 rounded-lg shadow-lg max-w-[700px]">
-            <div className="grid grid-cols-2 gap-x-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 ">
                 {/* Trò chơi */}
                 <div className="flex flex-col items-center">
                     <h1 className="text-3xl font-bold mb-3 text-blue-700">8-Puzzle</h1>
@@ -195,7 +195,7 @@ export default function Puzzle() {
                 </div>
 
                 {/* Kỷ lục */}
-                <div className="flex flex-col items-center justify-center bg-gray-100 p-6 rounded-lg shadow-md">
+                <div className="flex flex-col items-center justify-center bg-gray-100 p-6 rounded-lg shadow-md md:mt-0 mt-6">
                     <h2 className="text-2xl font-bold mb-4 text-yellow-700">Kỷ lục bước nhảy</h2>
                     <div className="text-[32px] text-green-600 font-extrabold">{record}</div>
                 </div>
