@@ -1,13 +1,29 @@
 import { useCallback, useEffect, useState } from "react";
 
+const createBoard = (size) => {
+    const board = [];
+    let count = 1;
+    for (let i = 0; i < size; i++) {
+        let row = [];
+        for (let j = 0; j < size; j++) {
+            row.push(count);
+            count++;
+        }
+        board.push(row)
+    }
+    board[size - 1][size - 1] = 0
+    return board
+}
+
 export default function Puzzle() {
-    const [board, setBoard] = useState([
-        [1, 2, 3],
-        [4, 5, 6],
-        [7, 8, 0],
-    ]);
+    const [size, setSize] = useState(3)
+    const [board, setBoard] = useState(() => createBoard(size));
+    const initialBoard = createBoard(size)
 
     const [isWin, SetIsWin] = useState(false);
+
+    const [isLoadingGame, setLoadingGame] = useState(true)
+
 
 
     const [step, setStep] = useState(0)
@@ -20,9 +36,21 @@ export default function Puzzle() {
         board[i0][j0] = board[i][j];
         board[i][j] = 0;
     };
+    // Hàm tìm vị trí ô trống
+    const findEmty = (board) => {
+        for (let r = 0; r < board.length; r++) {
+            for (let c = 0; c < board[r].length; c++) {
+                if (board[r][c] === 0) {
+                    return {row: r, col: c}
+                }
+            }
+        }
+    }
 
     // Kiểm tra xem board có thể giải được không, tổng số nghịch đảo chẵn
     const isSolvable = (board) => {
+        const size = board.length;  // Đảm bảo size đúng, thay vì dùng state
+
         // Làm phẳng 2D -> 1D, bỏ ô trống
         const flat = board.flat().filter(x => x !== 0);
         let count = 0;
@@ -33,18 +61,31 @@ export default function Puzzle() {
                 }
             }
         }
-        if (count % 2 === 0) {
-            return true
-        }
 
-        return false
+        // console.log("count", count, "size", size);
+        
+        // Xét riêng loại 3x3, 5x5 -  4x4, 6x6...
+
+        // Nếu size lẻ, chỉ cần count chẵn
+        if (size % 2 === 1) {
+            return count % 2 === 0
+        } else {
+            // Nếu size chẵn, xét trường hợp hàng của ô trống (tính từ 1 xuống)
+            const emptyRow = findEmty(board).row + 1;
+            // console.log("emptyRow", emptyRow);
+            
+            return (count % 2 === 0 && emptyRow % 2 === 0) || (count % 2 === 1 && emptyRow % 2 === 1);
+            
+        }
     }
 
     // Kiểm tra chiến thắng
     const checkWin = (board) => {
-        const target = [1, 2, 3, 4, 5, 6, 7, 8, 0];
+        const target = initialBoard.flat()
         return board.flat().join() === target.join();
     };
+
+    
 
 
     //////////// 2. Các hàm chức năng ////////////
@@ -71,7 +112,7 @@ export default function Puzzle() {
                     const row = flatBoard.slice(r * size, r * size + size);
                     newBoard.push(row)
                 }
-            } while (!isSolvable(newBoard))
+            } while (!isSolvable(newBoard) || checkWin(newBoard))
 
             setStep(0)
             SetIsWin(checkWin(newBoard));
@@ -95,16 +136,8 @@ export default function Puzzle() {
         // Khi win thì dừng việc di chuyển các ô
         if (!isWin) {
             // Tìm vị trí ô trống
-            const empty = { row: -1, col: -1 };
-            for (let r = 0; r < board.length; r++) {
-                for (let c = 0; c < board[r].length; c++) {
-                    if (board[r][c] === 0) {
-                        empty.row = r;
-                        empty.col = c;
-                        break;
-                    }
-                }
-            }
+            const empty = findEmty(board);
+
 
             // Xác định được vị trí click so với ô trống: trên, dưới, trái, phải của ô trống???
 
@@ -133,15 +166,15 @@ export default function Puzzle() {
 
     };
 
-
-    const [isLoadingGame, setLoadingGame] = useState(true)
-    // Lần đầu, hiển thị các mảnh ghép theo thứ tự rồi xáo nó
+    // Xử lý khi thay đổi size: cập nhật board, xáo lại (lần đầu + các lần change)
     useEffect(() => {
+        setBoard(() => createBoard(size))
+        setLoadingGame(true)
         setTimeout(() => {
             handleShuffle()
             setLoadingGame(false)
         }, 2000)
-    }, [handleShuffle])
+    }, [size, handleShuffle])
 
 
     return (
@@ -150,6 +183,13 @@ export default function Puzzle() {
                 {/* Trò chơi */}
                 <div className="flex flex-col items-center">
                     <h1 className="text-3xl font-bold mb-3 text-blue-700">8-Puzzle</h1>
+
+                    <div className="text-gray-500 text-[14px]">Chọn màn chơi</div>
+                    <div className="flex mt-1 justify-center w-full gap-2 text-[16px] text-white font-medium ">
+                        <div className="bg-blue-500 py-1 px-5 rounded cursor-pointer" onClick={() => setSize(2)}>2x2</div>
+                        <div className="bg-blue-500 py-1 px-5 rounded cursor-pointer" onClick={() => setSize(3)}>3x3</div>
+                        <div className="bg-blue-500 py-1 px-5 rounded cursor-pointer" onClick={() => setSize(4)}>4x4</div>
+                    </div>
                     <div className="h-[60px] flex items-center justify-center">
                         {isWin && (
                             <div className="text-black text-[24px] font-semibold">
@@ -162,7 +202,7 @@ export default function Puzzle() {
                         Số bước: {step}
                     </div>
 
-                    <div className="grid grid-cols-3 gap-2 text-white w-[300px] h-[300px] relative">
+                    <div className={`grid grid-cols-${size} gap-2 text-white w-[200px] h-[200px]  md:w-[300px] md:h-[300px] relative`}>
                         {/* Cover xáo sau x giây */}
                         {isLoadingGame && (
                             <div className="absolute top-0 left-0 right-0 bottom-0 bg-slate-500 opacity-70 flex items-center justify-center">
