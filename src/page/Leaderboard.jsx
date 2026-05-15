@@ -1,4 +1,4 @@
-import {useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { usePuzzle } from "../context/PuzzleContext";
 import { ArrowLeft, Crown, Medal, Trophy } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -47,14 +47,18 @@ export default function LeaderboardPage() {
             </div>
 
             {/* Tab */}
-            <div className="flex gap-1.5 bg-white/10 p-1.5 rounded-2xl border border-white/20 mb-5">
+            <div className="flex gap-1.5 bg-slate-900/40 backdrop-blur-md p-1.5 rounded-2xl border border-white/10 mb-5">
                 {[2, 3, 4].map(t => (
                     <button
                         key={t}
                         onClick={() => setActiveTab(t)}
-                        className={`flex-1 py-2.5 rounded-xl font-black text-sm transition-all duration-300 ${activeTab === t ? "bg-white text-indigo-600 shadow-lg" : "text-white/60 hover:text-white"
+                        className={`flex-1 py-2.5 rounded-xl font-black text-sm transition-all duration-300 ${activeTab === t
+                            ? "bg-white text-indigo-600 shadow-xl scale-[1.02]"
+                            : "text-white/80 hover:text-white bg-white/5 hover:bg-white/20 active:bg-white/30"
                             }`}
-                    >{t}×{t}</button>
+                    >
+                        {t}×{t}
+                    </button>
                 ))}
             </div>
 
