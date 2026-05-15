@@ -100,15 +100,15 @@ export default function Puzzle() {
             </div>
 
             {/* Size selector */}
-            <div className={`flex gap-2 mb-6 bg-white/10 backdrop-blur p-1.5 rounded-2xl border border-white/20 w-full transition-opacity duration-300 ${isLoading ? "opacity-50 pointer-events-none" : ""}`}>
+            <div className={`flex gap-2 mb-6 bg-slate-900/40 backdrop-blur-md p-1.5 rounded-2xl border border-white/10 w-full transition-opacity duration-300 ${isLoading ? "opacity-50 pointer-events-none" : ""}`}>
                 {[2, 3, 4].map(s => (
                     <button
                         key={s}
                         onClick={() => handleChangeSize(s)}
                         disabled={isLoading}
                         className={`flex-1 py-2.5 rounded-xl font-black text-sm transition-all duration-300 ${size === s
-                            ? "bg-white text-indigo-600 shadow-lg scale-[1.02]"
-                            : "text-white/70 hover:text-white hover:bg-white/10"
+                            ? "bg-white text-indigo-600 shadow-xl scale-[1.02]"
+                            : "text-white/80 hover:text-white bg-white/5 hover:bg-white/20 active:bg-white/30"
                             } ${isLoading ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
                     >
                         {s}×{s}
