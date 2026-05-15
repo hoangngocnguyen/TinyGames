@@ -1,297 +1,256 @@
-import { useCallback, useEffect, useState } from "react";
-
-const createBoard = (size) => {
-    const board = [];
-    let count = 1;
-    for (let i = 0; i < size; i++) {
-        let row = [];
-        for (let j = 0; j < size; j++) {
-            row.push(count);
-            count++;
-        }
-        board.push(row)
-    }
-    board[size - 1][size - 1] = 0
-    return board
-}
-
-export default function Puzzle() {
-    const [size, setSize] = useState(3)
-    const [board, setBoard] = useState(() => createBoard(size));
-    const [isWin, SetIsWin] = useState(false);
-    const [isLoadingGame, setLoadingGame] = useState(true)
-    const [step, setStep] = useState(0)
-    const [records, setRecords] = useState([{ size: 2, step: 0 }, { size: 3, step: 0 }, { size: 4, step: 0 }])
+import { Trophy, Shuffle, Star } from "lucide-react";
+import { Link } from "react-router-dom";
+import { useMemo, memo } from "react";
+import { usePuzzle } from "./context/PuzzleContext";
 
 
-    //////////// 1. Các hàm phụ trợ ////////////
-    // Reset trạng thái game
-    const resetGame = () => {
-        setLoadingGame(true)
-        SetIsWin(false)
-        setStep(0)
-    }
 
-    // Hoán vị 2 ô
-    const swap = (board, i0, j0, i, j) => {
-        board[i0][j0] = board[i][j];
-        board[i][j] = 0;
-    };
-    // Hàm tìm vị trí ô trống
-    const findEmty = (board) => {
-        for (let r = 0; r < board.length; r++) {
-            for (let c = 0; c < board[r].length; c++) {
-                if (board[r][c] === 0) {
-                    return { row: r, col: c }
-                }
-            }
-        }
+// ─────────────────────────────────────────────
+// TILE COLORS by number
+// ─────────────────────────────────────────────
+const TILE_COLORS = [
+    "from-violet-500 to-purple-600",
+    "from-blue-500 to-cyan-500",
+    "from-emerald-500 to-teal-500",
+    "from-orange-400 to-amber-500",
+    "from-pink-500 to-rose-500",
+    "from-indigo-500 to-blue-600",
+    "from-fuchsia-500 to-pink-500",
+    "from-lime-500 to-green-500",
+    "from-red-500 to-orange-500",
+    "from-sky-500 to-indigo-500",
+    "from-yellow-400 to-orange-400",
+    "from-teal-500 to-cyan-400",
+    "from-purple-500 to-fuchsia-600",
+    "from-green-500 to-emerald-600",
+    "from-rose-500 to-pink-600",
+    "from-cyan-500 to-sky-500",
+];
+
+// ─────────────────────────────────────────────
+// Memoized Tile Component
+// ─────────────────────────────────────────────
+const Tile = memo(function Tile({ item, index, size, isWin, color, handleClick }) {
+    const i = Math.floor(index / size);
+    const j = index % size;
+
+    if (item === 0) {
+        return <div className="rounded-xl bg-white/5 border border-white/5 w-full h-full" />;
     }
 
-    // Kiểm tra xem board có thể giải được không, tổng số nghịch đảo chẵn
-    const isSolvable = (board) => {
-        const size = board.length;  // Đảm bảo size đúng, thay vì dùng state
-
-        // Làm phẳng 2D -> 1D, bỏ ô trống
-        const flat = board.flat().filter(x => x !== 0);
-        let count = 0;
-        for (let i = 0; i < flat.length; i++) {
-            for (let j = i + 1; j < flat.length; j++) {
-                if (flat[j] < flat[i]) {
-                    count += 1
-                }
-            }
-        }
-
-        // console.log("count", count, "size", size);
-
-        // Xét riêng loại 3x3, 5x5 -  4x4, 6x6...
-        // Nếu size lẻ, chỉ cần count chẵn
-        if (size % 2 === 1) {
-            return count % 2 === 0
-        } else {
-            // Nếu size chẵn, xét trường hợp hàng của ô trống (tính từ 1 xuống)
-            const emptyRow = findEmty(board).row + 1;
-            // console.log("emptyRow", emptyRow);
-
-            return (count % 2 === 0 && emptyRow % 2 === 0) || (count % 2 === 1 && emptyRow % 2 === 1);
-
-        }
-    }
-
-    // Kiểm tra chiến thắng
-    const checkWin = (board) => {
-        const initialBoard = createBoard(board.length)        
-        const target = initialBoard.flat()
-        return board.flat().join() === target.join();
-    };
-
-
-
-
-    //////////// 2. Các hàm chức năng ////////////
-
-    // Hoán đổi, cách thức là hoán vị trí => chọn ra vị trí ngẫu nhiên và hoán giá trị giữa 2 vị trí -> chưa gọi là xáo trộn
-    const handleShuffle = useCallback(() => {
-        setBoard((prevBoard) => {
-            let newBoard = []
-            const size = prevBoard.length
-
-            do {
-                // Làm phẳng thành 1D
-                const flatBoard = prevBoard.flat();
-
-                for (let i = flatBoard.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [flatBoard[i], flatBoard[j]] = [flatBoard[j], flatBoard[i]];
-                }
-
-                // Dựng lại thành 2D
-                newBoard = []
-                for (let r = 0; r < size; r++) {
-                    const row = flatBoard.slice(r * size, r * size + size);
-                    newBoard.push(row)
-                }
-            } while (!isSolvable(newBoard) || checkWin(newBoard))
-
-            setStep(0)
-            SetIsWin(checkWin(newBoard));
-
-            return newBoard;
-        });
-    }, []);
-
-    // Cập nhật kỷ lục
-    useEffect(() => {
-        if (isWin) {
-            setRecords(prevRecords => {
-                const recordForSize = prevRecords.find(r => r.size === size);
-                // console.log("reforsize", recordForSize);
-                
-                // Tính thêm trường hợp tạo kỷ lục ban đầu
-                if (step < recordForSize.step || recordForSize.step === 0) {
-                    // Lọc ra rồi thêm vào lại
-                    const temp = prevRecords.filter(record => record.size !== size)
-                    // console.log("temp", temp, recordForSize);
-                    
-                    return [...temp, { size: size, step: step }]
-                } else {
-                    return prevRecords
-                }
-            })
-        }
-    }, [isWin, step, size]); // thêm step vào dependency để effect chạy đúng
-
-
-    // Xử lý khi click vào 1 ô
-    const handleClick = (i, j) => {
-        // Khi win thì dừng việc di chuyển các ô
-        if (!isWin) {
-            // Tìm vị trí ô trống
-            const empty = findEmty(board);
-
-
-            // Xác định được vị trí click so với ô trống: trên, dưới, trái, phải của ô trống???
-
-            if (
-                (i === empty.row - 1 && j === empty.col) ||
-                (i === empty.row + 1 && j === empty.col) ||
-                (i === empty.row && j === empty.col - 1) ||
-                (i === empty.row && j === empty.col + 1)
-            ) {
-
-                // Tăng bước nhảy
-                setStep((prev) => prev + 1)
-
-                // Swap giá trị
-                setBoard((prevBoard) => {
-                    const newBoard = prevBoard.map((row) => [...row]);
-                    swap(newBoard, empty.row, empty.col, i, j);
-
-                    // Tranh thủ có newBoard để check win
-                    SetIsWin(checkWin(newBoard))
-                    return newBoard;
-                });
-
-            }
-        }
-
-    };
-
-    // Xử lý khi thay đổi size: cập nhật board, xáo lại (useEffect: lần đầu + các lần change)
-    useEffect(() => {
-        setTimeout(() => {
-            handleShuffle()
-            setLoadingGame(false)
-        }, 2000)
-    }, [size, handleShuffle])
-
-    
-
-    // Xử lý khi chọn size
-    const handleClickSize = (size) => {
-        // setSize, setBoard, loading, isWin, step
-        setSize(size)
-        setBoard(() => createBoard(size))
-        resetGame()
-    }
-    
     return (
-        <div className="container mx-auto bg-white p-6 rounded-lg shadow-lg flex flex-col">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6">
-                {/* Trò chơi */}
-                <div className="flex flex-col items-center">
-                    <h1 className="text-3xl font-bold mb-3 text-blue-700">8-Puzzle</h1>
+        <button
+            onClick={() => handleClick(i, j)}
+            className={`rounded-xl bg-gradient-to-br ${color} flex items-center justify-center font-black text-white shadow-lg
+                active:scale-95 hover:brightness-110 transition-all duration-150 select-none w-full h-full
+                ${isWin ? "cursor-default animate-pulse" : "cursor-pointer"}
+                ${size === 4 ? "text-lg" : size === 2 ? "text-4xl" : "text-2xl"}
+            `}
+        >
+            {item}
+        </button>
+    );
+});
 
-                    <div className="text-gray-500 text-[14px]">Chọn màn chơi</div>
-                    <div className="flex mt-1 justify-center w-full gap-2 text-[16px] text-white font-medium ">
-                        <div className={`${size === 2? "bg-blue-500" : "bg-gray-400"} py-1 px-5 rounded cursor-pointer`} onClick={() => handleClickSize(2)}>2x2</div>
-                        <div className={`${size === 3? "bg-blue-500" : "bg-gray-400"} py-1 px-5 rounded cursor-pointer`} onClick={() => handleClickSize(3)}>3x3</div>
-                        <div className={`${size === 4? "bg-blue-500" : "bg-gray-400"} py-1 px-5 rounded cursor-pointer`} onClick={() => handleClickSize(4)}>4x4</div>
-                    </div>
-                    <div className="h-[60px] flex items-center justify-center">
-                        {isWin && (
-                            <div className="text-black text-[24px] font-semibold">
-                                🎉 Bạn đã chiến thắng! 🎉
-                            </div>
-                        )}
-                    </div>
+// ─────────────────────────────────────────────
+export default function Puzzle() {
+    const { size, board, isWin, isLoading, step, personalBests, handleChangeSize, handleShuffle, handleClick } = usePuzzle();
+    const pb = personalBests[size] || 0;
 
-                    <div className="text-[20px] text-green-600 font-medium py-2">
-                        Số bước: {step}
-                    </div>
+    // Memoize tiles rendering to prevent unnecessary recalculations
+    const tiles = useMemo(() => {
+        return board.flat().map((item, index) => {
+            const color = isWin
+                ? "from-emerald-400 to-teal-500"
+                : TILE_COLORS[(item - 1) % TILE_COLORS.length];
 
-                    <div style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }} className={`grid gap-2 text-white w-[300px] h-[300px]  md:w-[400px] md:h-[400px] relative`}>
-                        {/* Cover xáo sau x giây */}
-                        {isLoadingGame && (
-                            <div className="absolute top-0 left-0 right-0 bottom-0 bg-slate-500 opacity-70 flex items-center justify-center">
-                                <div className="text-white text-[24px] font-semibold">
-                                    Xáo trộn...
-                                </div>
-                            </div>
-                        )}
-                        {board.map((row, i) =>
-                            row.map((item, j) => {
-                                if (item === 0) {
-                                    return (
-                                        <div
-                                            className="bg-gray-400 rounded flex items-center justify-center text-[24px]"
-                                            key={`${i}${j}`}
-                                        ></div>
-                                    );
-                                }
-                                return (
-                                    <div
-                                        className={`bg-blue-600 rounded flex items-center justify-center text-[24px] cursor-pointer ${isWin ? "bg-green-600" : ""
-                                            }`}
-                                        key={`${i}${j}`}
-                                        onClick={() => handleClick(i, j)}
-                                    >
-                                        {item}
-                                    </div>
-                                );
-                            })
-                        )}
-                    </div>
+            return (
+                <Tile
+                    key={`${index}-${item}`}
+                    item={item}
+                    index={index}
+                    size={size}
+                    isWin={isWin}
+                    color={color}
+                    handleClick={handleClick}
+                />
+            );
+        });
+    }, [board, size, isWin, handleClick]);
 
-                    <div
-                        className="bg-blue-600 w-max px-6 py-2 rounded mt-4 cursor-pointer text-white font-semibold hover:bg-blue-700 transition"
-                        onClick={handleShuffle}
+    return (
+        <div className="flex flex-col items-center w-full max-w-md mx-auto px-4 py-6 min-h-screen">
+            {/* Header */}
+            <div className="w-full flex items-center justify-between mb-8">
+                <div>
+                    <h1 className="text-3xl font-black tracking-tight text-white drop-shadow-lg">
+                        <span className="text-yellow-300">N</span>-Puzzle
+                    </h1>
+                    <p className="text-white/50 text-xs font-medium tracking-widest uppercase mt-0.5">Slide to solve</p>
+                </div>
+                <Link to="/ranking">
+                    <button
+                        className="flex items-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur text-white font-bold py-2 px-4 rounded-2xl border border-white/20 transition-all text-sm shadow-lg"
                     >
-                        Xáo trộn
-                    </div>
-                </div>
+                        <Trophy size={16} className="text-yellow-300" />
+                        <span>BXH</span>
+                    </button>
 
-                {/* Kỷ lục */}
-                <div className="flex flex-col items-center justify-center bg-white p-6 rounded-2xl shadow-lg md:mt-0 mt-6 w-full max-w-md">
-                    <h2 className="text-2xl font-bold mb-6 text-yellow-700 tracking-wide">
-                        🏆 Kỷ lục trò chơi
-                    </h2>
-                    <div className="space-y-3 w-full">
-                        {records.sort((r1, r2) => r1.size - r2.size).map((record, i) => (
-                            <div
-                                key={i}
-                                className="flex items-center justify-between bg-gray-50 px-4 py-2 rounded-lg border border-gray-200"
-                            >
-                                <span className="text-lg font-semibold text-gray-700">
-                                    {record.size} × {record.size}
-                                </span>
-                                <span className="text-2xl font-extrabold text-green-600">
-                                    {record.step}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
+                </Link>
             </div>
 
-            {/* Footer copyright */}
-            <footer className="mt-10 text-center text-sm text-gray-500">
-                &copy; 2025 Hoang Ngoc Nguyen. All rights reserved.
+            {/* Size selector */}
+            <div className={`flex gap-2 mb-6 bg-white/10 backdrop-blur p-1.5 rounded-2xl border border-white/20 w-full transition-opacity duration-300 ${isLoading ? "opacity-50 pointer-events-none" : ""}`}>
+                {[2, 3, 4].map(s => (
+                    <button
+                        key={s}
+                        onClick={() => handleChangeSize(s)}
+                        disabled={isLoading}
+                        className={`flex-1 py-2.5 rounded-xl font-black text-sm transition-all duration-300 ${size === s
+                            ? "bg-white text-indigo-600 shadow-lg scale-[1.02]"
+                            : "text-white/70 hover:text-white hover:bg-white/10"
+                            } ${isLoading ? "cursor-not-allowed opacity-60" : "cursor-pointer"}`}
+                    >
+                        {s}×{s}
+                    </button>
+                ))}
+            </div>
+
+            {/* Stats row */}
+            <div className="flex gap-3 w-full mb-5">
+                <div className="flex-1 bg-white/10 backdrop-blur rounded-2xl p-3 border border-white/20 text-center">
+                    <div className="text-white/50 text-[10px] font-black uppercase tracking-wider mb-1">Bước</div>
+                    <div className="text-2xl font-black text-white">{step}</div>
+                </div>
+                <div className="flex-1 bg-white/10 backdrop-blur rounded-2xl p-3 border border-white/20 text-center">
+                    <div className="text-white/50 text-[10px] font-black uppercase tracking-wider mb-1">Kỷ lục</div>
+                    <div className="text-2xl font-black text-yellow-300">{pb || "—"}</div>
+                </div>
+                <div className="flex-1 bg-white/10 backdrop-blur rounded-2xl p-3 border border-white/20 text-center">
+                    <div className="text-white/50 text-[10px] font-black uppercase tracking-wider mb-1">Trạng thái</div>
+                    <div className="text-lg font-black">{isWin ? "🎉" : isLoading ? "⏳" : "🎮"}</div>
+                </div>
+            </div>
+
+            {/* Board */}
+            <div className="relative w-full aspect-square max-w-[360px]">
+                {/* Glow behind board */}
+                <div className="absolute inset-0 bg-gradient-to-br from-violet-500/30 to-cyan-500/30 rounded-3xl blur-xl scale-105" />
+
+                <div
+                    style={{
+                        gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))`,
+                        gridTemplateRows: `repeat(${size}, minmax(0, 1fr))`
+                    }}
+                    className="relative grid gap-2 w-full h-full bg-white/5 backdrop-blur-sm p-3 rounded-3xl border border-white/20 shadow-2xl"
+                >
+                    {/* Loading overlay */}
+                    {isLoading && (
+                        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center rounded-3xl z-20">
+                            <div className="flex gap-1.5 mb-3">
+                                {[0, 1, 2].map(i => (
+                                    <div
+                                        key={i}
+                                        className="w-2.5 h-2.5 bg-white rounded-full animate-bounce"
+                                        style={{ animationDelay: `${i * 0.15}s` }}
+                                    />
+                                ))}
+                            </div>
+                            <p className="text-white/80 text-xs font-black uppercase tracking-widest">Đang xáo trộn...</p>
+                        </div>
+                    )}
+
+                    {tiles}
+                </div>
+            </div>
+
+            {/* Win message - Fixed height to prevent CLS */}
+            <div className="h-12 flex items-center justify-center mt-4">
+                {isWin && (
+                    <div className="flex items-center gap-2 text-emerald-300 font-black text-lg animate-bounce">
+                        <Star size={18} className="fill-current" />
+                        Xuất sắc! Giải trong {step} bước!
+                        <Star size={18} className="fill-current" />
+                    </div>
+                )}
+            </div>
+
+            {/* Shuffle button */}
+            <button
+                onClick={handleShuffle}
+                className="mt-3 w-full max-w-[360px] flex items-center justify-center gap-2 bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 text-white font-black py-4 rounded-2xl shadow-xl transition-all active:scale-95 text-base tracking-wide"
+                style={{ boxShadow: "0 8px 25px rgba(99,102,241,0.4)" }}
+            >
+                <Shuffle size={18} />
+                Xáo Trộn Mới
+            </button>
+
+            <footer className="mt-auto pt-8 text-white/20 text-xs font-medium text-center">
+                © 2026 Hoang Ngoc Nguyen
             </footer>
         </div>
+    );
+}
 
 
+
+// ─────────────────────────────────────────────
+// MODAL
+// ─────────────────────────────────────────────
+export function RecordModal() {
+    const { modal, setModal, handleSaveRecord, size, step } = usePuzzle();
+    if (!modal.open) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop */}
+            <div
+                className="absolute inset-0 bg-black/70 backdrop-blur-md"
+                onClick={() => setModal(m => ({ ...m, open: false }))}
+            />
+
+            {/* Card */}
+            <div className="relative bg-gradient-to-br from-slate-800 to-slate-900 border border-white/20 rounded-3xl p-7 max-w-sm w-full shadow-2xl text-center">
+                {/* Glow */}
+                <div className="absolute inset-0 bg-gradient-to-br from-violet-500/10 to-yellow-500/10 rounded-3xl" />
+
+                <div className="relative">
+                    <div className="text-5xl mb-3 animate-bounce">👑</div>
+                    <h3 className="text-xl font-black text-yellow-300 mb-1 uppercase tracking-wide">Lọt Top Kỷ Lục!</h3>
+                    <p className="text-white/60 text-sm mb-5 leading-relaxed">
+                        Bạn giải màn <span className="text-white font-bold">{size}×{size}</span> trong{" "}
+                        <span className="text-emerald-400 font-black">{step} bước</span>.
+                        Để lại tên của bạn!
+                    </p>
+
+                    <input
+                        type="text"
+                        className="w-full bg-white/10 border border-white/20 rounded-2xl px-4 py-3 text-white text-center font-bold text-base focus:outline-none focus:border-violet-400 focus:bg-white/15 transition-all mb-4 placeholder-white/30"
+                        placeholder="Nhập biệt danh..."
+                        value={modal.inputName}
+                        onChange={e => setModal(m => ({ ...m, inputName: e.target.value }))}
+                        onKeyDown={e => e.key === "Enter" && handleSaveRecord()}
+                        maxLength={15}
+                        autoFocus
+                    />
+
+                    <div className="flex gap-3">
+                        <button
+                            className="flex-1 bg-white/10 hover:bg-white/20 text-white/70 py-3 rounded-2xl font-bold transition-all border border-white/10 text-sm"
+                            onClick={() => setModal(m => ({ ...m, open: false }))}
+                        >
+                            Bỏ qua
+                        </button>
+                        <button
+                            className="flex-2 flex-grow-[2] bg-gradient-to-r from-yellow-400 to-amber-500 hover:from-yellow-300 hover:to-amber-400 text-slate-900 py-3 rounded-2xl font-black transition-all shadow-lg text-sm"
+                            style={{ boxShadow: "0 6px 20px rgba(251,191,36,0.35)" }}
+                            onClick={handleSaveRecord}
+                        >
+                            🏆 Ghi Danh
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     );
 }
